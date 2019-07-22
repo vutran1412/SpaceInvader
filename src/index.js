@@ -6,23 +6,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let space = new Space()
     space.init(container)
     space.createStars()
+
+    let canvas = document.getElementById("gameCanvas")
+    canvas.width = 800
+    canvas.height = 600
     let game = new Game()
-    
-    function gameLoop(game) {
-        let currentState = game.currentState()
-        if (currentState) {
-            let deltaT = 1 / game.config.fps
 
-            let gameContext = game.gameCanvas.getContext("2d")
+    game.init(canvas)
+    game.start()
 
-            if (currentState.update) {
-                currentState.update(game, deltaT)
-            }
-            if (currentState.draw) {
-                currentState.draw(game, deltaT, gameContext)
-            }
-
+    window.addEventListener("keydown", function keydown(e) {
+        let keycode = e.which || window.event.keycode
+        if (keycode === 37 || keycode === 39 || keycode === 32) {
+            e.preventDefault()
         }
-    }
+        game.keyDown(keycode)
+    })
+
+    window.addEventListener("keyup", function keydown(e) {
+        let keycode = e.which || window.event.keycode
+        game.keyUp(keycode)
+    })
 
 })

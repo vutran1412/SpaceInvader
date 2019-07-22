@@ -1,8 +1,24 @@
+const WelcomeState = require('./welcome')
+
 function Game() {
     this.config = {
+        bombRate: 0.05,
+        bombMinVelocity: 50,
+        bombMaxVelocity: 50,
+        invaderInitialVelocity: 25,
+        invaderAcceleration: 0,
+        invaderDropDistance: 20,
+        rocketVelocity: 120,
+        rocketMaxFireRate: 2,
         gameWidth: 600,
         gameHeight: 500,
-        fps: 50
+        fps: 50,
+        debugMode: false,
+        invaderRanks: 5,
+        invaderfiles: 10,
+        shipSpeed: 120,
+        levelDifficultyMultiplier: 0.2,
+        pointsPerInvader: 5
     }
 
     this.lives = 3
@@ -98,3 +114,20 @@ Game.prototype.popState = function() {
     }
 }
 
+Game.prototype.keyDown = function(keyCode) {
+    this.pressedKeys[keyCode] = true
+
+    if (this.currentState() && this.currentState().keyDown) {
+        this.currentState().keyDown(this, keyCode)
+    }
+}
+
+Game.prototype.keyUp = function(keyCode) {
+    delete this.pressedKeys[keyCode]
+
+    if (this.currentState() && this.currentState().keyUp) {
+        this.currentState().keyUp(this, keyCode)
+    }
+}
+
+module.exports = Game
