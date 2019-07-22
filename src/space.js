@@ -3,11 +3,11 @@ const Star = require('./star')
 function Space() {
     this.fps = 30
     this.canvas = null
-    this.width = 0
+    this.width = 1000
     this.height = 0
     this.minVelocity = 35
-    this.maxVelocity = 2000
-    this.stars = 200
+    this.maxVelocity = 200
+    this.stars = 400
     this.intervalId = 0
     
 }
@@ -18,7 +18,7 @@ Space.prototype.createStars = function() {
     for (let i = 0; i < this.stars; i++) {
         stars[i] = new Star(
             Math.random() * this.width, 
-            Math.random() * this.width, 
+            Math.random() * this.height, 
             Math.random() * 3 + 1, 
             (Math.random() * (this.maxVelocity - this.minVelocity)) + this.minVelocity
         )
@@ -31,11 +31,11 @@ Space.prototype.update = function() {
     let deltaT = 1 / this.fps
     for (let i = 0; i < this.stars.length; i++) {
         let star = this.stars[i]
-        star.y += deltaT * star.velocity
-        if (star.y > this.height) {
+        star.x -= deltaT * star.velocity
+        if (star.x < 0) {
             this.stars[i] = new Star(
-                Math.random() * this.width,
-                0,
+               1700,
+                Math.random() * this.height,
                 Math.random() * 3 + 1,
                 (Math.random() * (this.maxVelocity - this.minVelocity)) + this.minVelocity
             )
