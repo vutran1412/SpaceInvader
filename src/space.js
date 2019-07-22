@@ -6,8 +6,8 @@ function Space() {
     this.width = 1000
     this.height = 0
     this.minVelocity = 35
-    this.maxVelocity = 200
-    this.stars = 400
+    this.maxVelocity = 50
+    this.stars = 200
     this.intervalId = 0
     
 }
@@ -23,7 +23,6 @@ Space.prototype.createStars = function() {
             (Math.random() * (this.maxVelocity - this.minVelocity)) + this.minVelocity
         )
     }
-    debugger
     this.stars = stars
 }
 
@@ -31,11 +30,11 @@ Space.prototype.update = function() {
     let deltaT = 1 / this.fps
     for (let i = 0; i < this.stars.length; i++) {
         let star = this.stars[i]
-        star.x -= deltaT * star.velocity
-        if (star.x < 0) {
+        star.y += deltaT * star.velocity
+        if (star.y > this.height) {
             this.stars[i] = new Star(
-               1700,
-                Math.random() * this.height,
+               Math.random() * this.width,
+                0,
                 Math.random() * 3 + 1,
                 (Math.random() * (this.maxVelocity - this.minVelocity)) + this.minVelocity
             )
