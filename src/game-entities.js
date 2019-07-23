@@ -1,28 +1,38 @@
-function Player(x, y) {
-    this.x = x
-    this.y = y
+const Entity = require('./entity')
+
+function Player(position, speed, direction) {
+    Entity.call(this, position, speed, direction)
+
     this.width = 20
-    this.height = 20
-    this.direction = -1
-}
-
-Player.prototype.update = function (game) {
-    if (this.y <= 0 || this.y + this.height >= game.gameFieldHeight()) {
-        this.direction *= -1
-    }
-}
-
-function Enemy(x, y) {
-    this.x = x
-    this.y = y
-    this.width = 10
     this.height = 10
-    this.direction = 1
+}
+Player.prototype = Object.create(Entity.prototype)
+
+Player.prototype.update = function (deltaT, game) {
+    Entity.prototype.update.call(this, deltaT)
+
+    if (this.collisionRect().top() <= 0 || 
+        this.collisionRect().bottom() >= game.gameFieldRect().bottom()) {
+            this.direction *= -1
+        }
+
 }
 
-Enemy.prototype.update = function (game) {
-    if (this.y <= 0 || this.y + this.height >= game.gameFieldHeight()) {
-        this.direction *= -1
+function Enemy(position, speed, direction, rank) {
+    Entity.call(this, position, speed, direction)
+
+    this.width = 13
+    this.height = 10
+    this.rank = rank
+}
+Enemy.prototype = Object.create(Entity.prototype)
+
+Enemy.prototype.update = function (deltaT, game) {
+    Entity.prototype.update.call(this, deltaT)
+
+    if (this.collisionRect().top() <= 0 || 
+        this.collisionRect().bottom() >= game.gameFieldRect().bottom()) {
+        this.direction.y *= -1
     }
 }
 

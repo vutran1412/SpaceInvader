@@ -6,15 +6,18 @@ const { Player, Enemy } = require('./game-entities')
 document.addEventListener("DOMContentLoaded", () => {
 
     var renderer = (function() {
-        function _drawEnemy(context, enemy) {
-            context.fillStyle = "red"
-            context.fillRect(enemy.x, enemy.y, enemy.width, enemy.height)
-        }
 
-        function _drawPlayer(context, player) {
-            context.fillStyle = "blue"
-            context.fillRect(player.x, player.y, player.width, player.height)
-        }
+        
+
+        // function _drawEnemy(context, enemy) {
+        //     context.fillStyle = "red"
+        //     context.fillRect(enemy.x, enemy.y, enemy.width, enemy.height)
+        // }
+
+        // function _drawPlayer(context, player) {
+        //     context.fillStyle = "blue"
+        //     context.fillRect(player.x, player.y, player.width, player.height)
+        // }
 
         function _render() {
             var container = document.getElementById("container")

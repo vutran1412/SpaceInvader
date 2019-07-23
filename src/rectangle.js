@@ -45,6 +45,4 @@ function rectUnion(r1, r2) {
     return new Rectangle(x, y, width, height)
 }
 
-module.exports = {
-    Rectangle
-}
+module.exports = Rectangle
