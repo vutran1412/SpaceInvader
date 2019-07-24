@@ -1,18 +1,18 @@
-var vector2d = function (x, y) {
+var Vector2d = function (x, y) {
     this.x = x
     this.y = y
 }
 
 function vectorAdd(v1, v2) {
-    return new vector2d(v1.x + v2.x, v1.y + v2.y)
+    return new Vector2d(v1.x + v2.x, v1.y + v2.y)
 }
 
 function vectorSubtract(v1, v2) {
-    return new vector2d(v1.x - v2.x, v1.y - v1.y)
+    return new Vector2d(v1.x - v2.x, v1.y - v1.y)
 }
 
 function vectorScalarMultiply(v1, s) {
-    return new vector2d(v1.x * s, v1.y * s)
+    return new Vector2d(v1.x * s, v1.y * s)
 }
 
 function vectorLength(v) {
@@ -25,7 +25,7 @@ function vectorNormalize(v) {
 }
 
 module.exports ={
-    vector2d,
+    Vector2d,
     vectorAdd,
     vectorSubtract,
     vectorScalarMultiply,
