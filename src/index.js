@@ -16,17 +16,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
         this.width = 20
         this.height = 10
+
+        this.movingLeft = false
+        this.movingRight = false
     }
     Player.prototype = Object.create(Entity.prototype)
+
+    Player.prototype.updateDirection = function() {
+        var direction = new Vector2d(0, 0)
+        if (this.movingLeft) {
+            direction = vectorAdd(direction, new Vector2d(-1, 0))
+        }
+        if (this.movingRight) {
+            direction = vectorAdd(direction, new Vector2d(1, 0))
+        }
+        this.direction = direction
+    }
+
+    Player.prototype.moveRight = function(enable) {
+        this.movingRight = enable
+        this.updateDirection()
+    }
+
+    Player.prototype.moveLeft = function(enable) {
+        this.movingLeft = enable
+        this.updateDirection()
+    }
+
+    Player.prototype.fire = function() {
+        console.log("Boom")
+    }
+
 
     Player.prototype.update = function (deltaT) {
         Entity.prototype.update.call(this, deltaT)
 
-        if (this.collisionRect().top() <= 0 ||
-            this.collisionRect().bottom() >= game.gameFieldRect().bottom() ){
-            this.direction.y *= -1
-        }
-
+        if (this.collisionRect().left() <= 0 || 
+            this.collisionRect().right() >= game.gameFieldRect().right()) {
+                this.direction.x *= -1
+            }
     }
 
     function Enemy(position, speed, direction, rank) {
@@ -127,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
             _enemies = []
             _gameFieldRect = new Rectange(0, 0, 300, 200)
 
-            this.addEntity(new Player(new Vector2d(100, 175), 25, new Vector2d(0, -1)));
+            this.addEntity(new Player(new Vector2d(100, 175), 90, new Vector2d(0, 0)));
             this.addEntity(new Enemy(new Vector2d(20, 25), 20, new Vector2d(0, 1), 0));
             this.addEntity(new Enemy(new Vector2d(50, 25), 10, new Vector2d(0, 1), 1));
             this.addEntity(new Enemy(new Vector2d(80, 25), 15, new Vector2d(0, 1), 2));
@@ -192,6 +220,94 @@ document.addEventListener("DOMContentLoaded", () => {
             gameFieldRect: function () { return _gameFieldRect }
         }
 
+    })()
+
+    var playerActions = (function() {
+
+        var _ongoingActions = []
+        
+        var keybinds = {
+            32: "fire",
+            37: "moveLeft",
+            39: "moveRight"
+        }
+
+        document.body.addEventListener('keydown', keyDown)
+        document.body.addEventListener('keyup', keyUp)
+
+
+        function keyDown(e) {
+            var x = e.which || e.keyDown
+
+            if (keybinds[x] !== undefined) {
+                e.preventDefault()
+                playerActions.startAction(x, keybinds[x])
+            }
+        }
+
+        function keyUp(e) {
+            var x = e.which || e.keyCode
+
+            if (keybinds[x] !== undefined) {
+                e.preventDefault()
+                playerActions.endAction(x)
+            }
+        }
+
+        function getRelativeTouchCoords(touch) {
+            function getOffsetLeft(elem) {
+                var offsetLeft = 0
+                do {
+                    if (!isNaN(elem.offsetLeft)) {
+                        offsetLeft += elem.offsetLeft
+                    }
+                }
+                while (elem = elem.offsetParent)
+                return offsetLeft
+            }
+        }
+
+        function _startAction(id, playerAction) {
+            if (playerAction === undefined) {
+                return
+            }
+            var f,
+                acts = {
+                    "moveLeft": function () { if (game.player()) game.player().moveLeft(true); },
+                    "moveRight": function () { if (game.player()) game.player().moveRight(true); },
+                    "fire": function () { if (game.player()) game.player().fire(); }
+                };
+
+            if (f = acts[playerAction]) f();
+
+            _ongoingActions.push({
+                identifier: id, 
+                playerAction: playerAction
+            })
+        }
+
+        function _endAction(id) {
+            var f, 
+                acts = {
+                    "moveLeft": function () { if (game.player()) game.player().moveLeft(false); },
+                    "moveRight": function () { if (game.player()) game.player().moveRight(false); }
+                };
+
+
+                var idx = _ongoingActions.findIndex(function(a) {
+                    return a.identifier === id
+                })
+
+                if (idx >= 0) {
+                    if (f = acts[_ongoingActions[idx].playerAction]) f()
+                    _ongoingActions.splice(idx, 1)
+                }
+        }
+
+        return {
+            startAction: _startAction,
+            endAction: _endAction
+        }
     })()
 
 
