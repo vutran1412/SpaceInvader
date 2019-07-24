@@ -1,6 +1,7 @@
 const Space = require('./space')
 const Entity = require('./entity')
-let Rectange = require('./rectangle')
+const Rectange = require('./rectangle')
+const Projectile = require('./projectile')
 const { Vector2d,
     vectorAdd,
     vectorSubtract,
@@ -51,27 +52,95 @@ document.addEventListener("DOMContentLoaded", () => {
     Player.prototype.update = function (deltaT) {
         Entity.prototype.update.call(this, deltaT)
 
-        if (this.collisionRect().left() <= 0 || 
-            this.collisionRect().right() >= game.gameFieldRect().right()) {
-                this.direction.x *= -1
-            }
+        
     }
 
     function Enemy(position, speed, direction, rank) {
         Entity.call(this, position, speed, direction)
 
-        this.width = 13
+        this.width = 15
         this.height = 10
         this.rank = rank
+
+        this.dropTarget = 0
+        this.dropAmount = 1
+        this.timer = 0
+        this.firePercent = 10
+        this.fireWait = Math.random() * 5
     }
     Enemy.prototype = Object.create(Entity.prototype)
 
     Enemy.prototype.update = function (deltaT) {
+
+        // Edge Collision
+        var enemiesLeft = game.enemiesRect().left(),
+            enemiesRight = game.enemiesRect().right(),
+            edgeMargin = 5,
+            gameLeftEdge = game.gameFieldRect().left() + edgeMargin
+            gameRightEdge = game.gameFieldRect().right() - edgeMargin
+
         Entity.prototype.update.call(this, deltaT);
-        if (this.collisionRect().top() <= 0 ||
-            this.collisionRect().bottom() >= game.gameFieldRect().bottom()) {
-            this.direction.y *= -1;
+
+        // Drop if the enemiesrect hits an edge margin
+        if ((this.direction.x < 0 && enemiesLeft < gameLeftEdge) ||
+            (this.direction.x > 0 && enemiesRight > gameRightEdge)) {
+                this.dropTarget += this.dropAmount
         }
+
+        // Determine Direction
+        if (this.position.y < this.dropTarget) {
+            this.direction = new Vector2d(0, 1)
+        } else if (this.direction.y > 0) {
+            this.direction = (enemiesRight > gameRightEdge) ? new Vector2d(-1, 0) : new Vector2d(1, 0)
+        }
+
+        // Determine Firing Weapon
+        var p = vectorAdd(this.position, new Vector2d(0, 5))
+
+        function existsUnderneath(e) {
+            var rect = e.collisionRect()
+            return p.y <= rect.top() &&
+                rect.left() <= p.x && p.x <= rect.right()
+        }
+
+        this.timer += deltaT
+
+        if (this.timer > this.fireWait) {
+            this.timer = 0
+            this.fireWait = 1 + Math.random() * 4
+
+            if (randomInt(100) < this.firePercent && !game.enemies().find(existsUnderneath)) {
+                this.fire(p)
+            }
+        }
+
+    }
+
+    Enemy.prototype.fire = function(position) {
+        console.log("enemies boom")
+    }
+
+    function randomInt(max) {
+        return Math.floor(Math.random() * Math.floor(max));
+    }
+
+    function rectUnion(r1, r2) {
+        var x, y, width, height
+
+        if (r1 === undefined) {
+            return r2
+        }
+
+        if (r2 === undefined) {
+            return r1
+        }
+
+        x = Math.min(r1.x, r2.x)
+        y = Math.min(r1.y, r2.y)
+        width = Math.max(r1.right(), r2.right()) - Math.min(r1.left(), r2.left())
+        height = Math.max(r1.bottom(), r2.bottom()) - Math.min(r1.top(), r2.top())
+        let rectange = new Rectange(x, y, width, height)
+        return rectange
     }
 
     
@@ -83,7 +152,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 "rgb(150, 89, 7)",
                 "rgb(56, 150, 7)",
                 "rgb(7, 150, 122)",
-                "rgb(46, 7, 150)"]
+                "rgb(46, 7, 150)"],
+            _projectileColors = {"player": "rgb(196, 208, 106)"}
 
         function _drawRectangle(color, entity) {
             _context.fillStyle = color
@@ -151,16 +221,16 @@ document.addEventListener("DOMContentLoaded", () => {
             _started = false
 
         function _start() {
+            _lastFrameTime = 0
             _entities = []
             _enemies = []
-            _gameFieldRect = new Rectange(0, 0, 300, 200)
+            _gameFieldRect = new Rectange(0, 0, 300, 180)
+            _enemiesRect = new Rectange(0, 0, 0, 0)
+            _enemySpeed = 10
+            _enemyFirePercent = 10
+            _enemyDropAmount = 1
 
-            this.addEntity(new Player(new Vector2d(100, 175), 90, new Vector2d(0, 0)));
-            this.addEntity(new Enemy(new Vector2d(20, 25), 20, new Vector2d(0, 1), 0));
-            this.addEntity(new Enemy(new Vector2d(50, 25), 10, new Vector2d(0, 1), 1));
-            this.addEntity(new Enemy(new Vector2d(80, 25), 15, new Vector2d(0, 1), 2));
-            this.addEntity(new Enemy(new Vector2d(120, 25), 25, new Vector2d(0, 1), 3));
-            this.addEntity(new Enemy(new Vector2d(140, 25), 30, new Vector2d(0, 1), 4));
+            this.addEntity(new Player(new Vector2d(100, 175), 90, new Vector2d(0, 0)))
 
             if (!_started) {
                 window.requestAnimationFrame(this.update.bind(this))
@@ -196,20 +266,65 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        function _update() {
-            var deltaT = 1 / 60
-            physics.update(deltaT)
+        function _update(time) {
 
-            var i
+            var i, j,
+                dt = Math.min((time - _lastFrameTime) / 1000, 3 / 60);
+
+            _lastFrameTime = time;
+
+            // Update Physics
+            physics.update(dt);
+
+            // Calculate the bounding rectangle around the enemies
+            _enemiesRect = _enemies.reduce(
+                function (rect, e) {
+                    return rectUnion(rect, e.collisionRect());
+                },
+                undefined);
+
+            // Update Entities
             for (i = _entities.length - 1; i >= 0; i--) {
-                _entities[i].update(deltaT)
+                _entities[i].update(dt);
             }
 
-            renderer.render(deltaT)
+            // Update Enemy Speed
+            var speed = _enemySpeed + (_enemySpeed * (1 - (_enemies.length / 50)));
+            for (i = _enemies.length - 1; i >= 0; i--) {
+                _enemies[i].speed = speed;
+            }
 
-            window.requestAnimationFrame(this.update.bind(this))
+            // Create the grid of Enemies if there are 0
+            if (_enemies.length === 0) {
+                for (i = 0; i < 10; i++) {
+                    for (j = 0; j < 5; j++) {
+                        var dropTarget = 10 + j * 20,
+                            position = new Vector2d(50 + i * 20, dropTarget - 100),
+                            direction = new Vector2d(1, 0),
+                            rank = 4 - j,
+                            enemy = new Enemy(position,
+                                _enemySpeed,
+                                direction,
+                                rank);
+
+                        enemy.dropTarget = dropTarget;
+                        enemy.firePercent = _enemyFirePercent;
+                        enemy.dropAmount = _enemyDropAmount;
+
+                        this.addEntity(enemy);
+                    }
+                }
+
+                _enemySpeed += 5;
+                _enemyFirePercent += 5;
+                _enemyDropAmount += 1;
+            }
+
+            // Render the frame
+            renderer.render(dt);
+
+            window.requestAnimationFrame(this.update.bind(this));
         }
-
         return {
             start: _start,
             update: _update,
@@ -217,13 +332,17 @@ document.addEventListener("DOMContentLoaded", () => {
             entities: function () { return _entities },
             enemies: function () { return _enemies },
             player: function () { return _player },
-            gameFieldRect: function () { return _gameFieldRect }
+            gameFieldRect: function () { return _gameFieldRect },
+            enemiesRect: function() { return _enemiesRect }
         }
 
     })()
 
     var playerActions = (function() {
-
+        var canvas = document.getElementById("gameCanvas")
+        canvas.addEventListener("touchstart", touchStart)
+        canvas.addEventListener("touchend", touchEnd)
+        canvas.addEventListener("touchcancel", touchEnd)
         var _ongoingActions = []
         
         var keybinds = {
@@ -255,15 +374,62 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         function getRelativeTouchCoords(touch) {
-            function getOffsetLeft(elem) {
+            function getOffSetLeft(elem) {
                 var offsetLeft = 0
                 do {
                     if (!isNaN(elem.offsetLeft)) {
                         offsetLeft += elem.offsetLeft
                     }
-                }
-                while (elem = elem.offsetParent)
+                } while (elem = elem.offsetParent)
                 return offsetLeft
+            }
+
+            function getOffSetTop(elem) {
+                var offSetTop = 0
+                do {
+                    if (!isNaN(ele.offSetTop)) {
+                        offSetTop += elem.offSetTop
+                    }
+                } while (elem = elem.offsetParent)
+                return offSetTop
+            }
+            var scale = game.gameFieldRect().width / canvas.clientWidth
+            var x = touch.pageX - getOffSetLeft(canvas)
+            var y = touch.pageY - getOffSetTop(canvas)
+            return {
+                x: y * scale,
+                y: y * scale
+            }
+        }
+
+        function touchStart(e) {
+            var touches = e.chagedTouches,
+                touchLocation,
+                playerAction
+
+            e.preventDefault()
+
+            for (var i = touches.length - 1; i >= 0; i--) {
+                touchLocation = getRelativeTouchCoords(touches[i])
+
+                if (touchLocation.x < game.gameFieldRect().width * (1/5)) {
+                    playerAction = "moveLeft"
+                } else if (touchLocation.x < game.gameFieldRect().width * (4/5)) {
+                    playerAction = "fire"
+                } else {
+                    playerAction = "moveRight"
+                }
+
+                playerAction.startAction(touches[i], identifier, playerAction)
+            }
+        }
+
+        function touchEnd(e) {
+            var touches = e.changedTouches
+            e.preventDefault()
+
+            for (var i = touches.length - 1; i >= 0; i--) {
+                playerActions.endAction(touches[i], identifier)
             }
         }
 

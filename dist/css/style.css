@@ -16,8 +16,12 @@ body, html {
 }
 
 #gameCanvas {
-    width: 800px;
-    opacity: 0.5;
-    margin-left: 0 auto;
-    margin-right: 0 auto;
+    position: absolute;
+	width: 600px;
+	height: 400px;
+	left: 50%;
+	top: 50%;
+	margin-left: -300px; 
+	margin-top: -200px; 
+  
 }
